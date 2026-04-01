@@ -2,7 +2,7 @@
 
 This project implements the generation and embedding (expansion) of **Cover-Free Families (CFFs)** using constructions based on polynomials over finite fields. The code is written in C and optimized for performance.
 
-## 📚 What are CFFs?
+## What are CFFs?
 
 **Cover-Free Families (CFFs)** are combinatorial structures which can be represented as binary matrices. This matrix is considered a $d$-CFF if the union of any $d$ columns does not completely cover any other remaining column.
 
@@ -12,11 +12,11 @@ They have important applications in:
   * Cryptography and key distribution
   * Digital signatures
 
-## 🧮 Implemented Constructions
+## Implemented Constructions
 
 The project focuses on algebraic construction using polynomials over finite fields ($\mathbb{F}_q$).
 
-### Polynomial Construction - Embedding CFFs
+### Construction of Polynomials over Finite Fields - Embedding CFFs
 
 In this construction, matrix rows are indexed by pairs of elements $(x, y) \in B \times \mathbb{F}_q$ where $B \in \mathbb{F}_q$ , and columns are indexed by polynomials of degree up to $k$. A position in the matrix is set to $1$ if the corresponding polynomial evaluated at $x$ yields $y$ (i.e., $P(x) = y$), and 0 otherwise.
 
@@ -24,7 +24,7 @@ In this construction, matrix rows are indexed by pairs of elements $(x, y) \in B
 
 The Monotone construction is a variation designed for embedding operations. During expansion, rows are indexed by pairs $(x, y)$ where $x$ is restricted to a fixed subset $B \subseteq \mathbb{F}_q$ corresponding to the smaller base field. The parameters $d$ and $k$ are always kept constant throughout the embedding process—only the field size $q$ changes.
 
-## 🚀 Hash Table Optimizations
+## Hash Table Optimizations
 
 Naive generation of polynomial CFFs can be computationally expensive due to the need to evaluate many polynomials at many points.
 
@@ -33,7 +33,7 @@ To optimize this process, this project uses **Hash Tables (GHashTable from GLib)
 1.  Instead of repeatedly recalculating $P(x)$, we precompute and store which polynomials yield a value $y$ for a given $x$.
 2.  This transforms the search into an average constant-time $O(1)$ operation for filling the matrix, drastically speeding up the generation of large instances.
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 To compile this project, you will need the following libraries installed on your system:
 
@@ -66,7 +66,7 @@ sudo apt-get install build-essential libgmp-dev libglib2.0-dev libomp-dev
 brew install gmp glib libomp flint
 ```
 
-## 💻 How to Run
+## How to Run
 
 ### 1\. Compilation
 
