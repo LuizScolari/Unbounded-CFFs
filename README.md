@@ -124,7 +124,7 @@ Note: When $d = (q-1)/k$, the minimum block size $(dk+1)q$ can yield fewer rows 
 
 Output files will be generated in the `CFFs/` folder.
 
-## 📊 Benchmark
+## Benchmark
 
 The project includes an automated benchmark system to measure the execution time of CFF generation. The benchmarks measure two metrics:
 
@@ -143,10 +143,10 @@ For more details on how to run the benchmarks, configure iterations, and interpr
 
 -----
 
-## 🎓 Supervision
+## Supervision
 
 This research is being supervised by **Professor Thaís Bardini Idalino** ([Website](https://thaisidalino.github.io), [Google Scholar](https://scholar.google.com/citations?user=hS_R7ZsAAAAJ&hl)).
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
