@@ -1,10 +1,15 @@
-# Build artifacts (build/ objects, cff binary, test/verify.c -> prog)
+# Build artifacts (build/ objects, cff/cff_bench binaries, test/verify.c -> prog)
 build/
 cff
+cff_bench
 prog
 
 # Generated CFF matrices (created at runtime under CFFs/)
 CFFs/
+
+# Benchmark artifacts (regenerate with `make tables`)
+bench/results.csv
+bench/tables.tex
 
 # OS / editor cruft
 .DS_Store

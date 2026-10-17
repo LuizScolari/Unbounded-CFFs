@@ -63,14 +63,45 @@ MAIN_OBJ    = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(MAIN_SRC))
 OBJS    = $(MAIN_OBJ) $(RS_OBJS) $(CRS_OBJS) $(SUBSET_OBJS)
 HEADERS = $(wildcard $(SRC_DIR)/RS/*.h $(SRC_DIR)/CRS/*.h $(SRC_DIR)/Subset/*.h)
 
+# Growth benchmark (bench/): a separate binary that links the construction
+# objects (minus src/main.c) and times only the new parts of each growth step.
+BENCH_TARGET = cff_bench
+BENCH_DIR    = bench
+BENCH_SRCS   = $(BENCH_DIR)/bench_util.c \
+               $(BENCH_DIR)/bench_plan.c \
+               $(BENCH_DIR)/bench_rs.c \
+               $(BENCH_DIR)/bench_crs.c \
+               $(BENCH_DIR)/bench_subset.c \
+               $(BENCH_DIR)/bench_main.c
+BENCH_OBJS   = $(patsubst $(BENCH_DIR)/%.c,$(BUILD_DIR)/bench/%.o,$(BENCH_SRCS))
+BENCH_CFLAGS = $(COMMON_CFLAGS) -I$(BENCH_DIR)
+
 # Per-group compilation flags (target-specific variables)
 $(RS_OBJS):     CFLAGS := $(RS_CFLAGS)
 $(CRS_OBJS):    CFLAGS := $(CRS_CFLAGS)
 $(SUBSET_OBJS): CFLAGS := $(SUBSET_CFLAGS)
 $(MAIN_OBJ):    CFLAGS := $(MAIN_CFLAGS)
 
+$(BUILD_DIR)/bench/bench_rs.o:     CFLAGS := $(BENCH_CFLAGS) $(GLIB_CFLAGS) -I$(SRC_DIR)/RS
+$(BUILD_DIR)/bench/bench_crs.o:    CFLAGS := $(BENCH_CFLAGS) -I$(SRC_DIR)/CRS
+$(BUILD_DIR)/bench/bench_subset.o: CFLAGS := $(BENCH_CFLAGS) -I$(SRC_DIR)/Subset
+$(BUILD_DIR)/bench/bench_util.o:   CFLAGS := $(BENCH_CFLAGS)
+$(BUILD_DIR)/bench/bench_plan.o:   CFLAGS := $(BENCH_CFLAGS)
+$(BUILD_DIR)/bench/bench_main.o:   CFLAGS := $(BENCH_CFLAGS)
+
+# LaTeX growth tables: run the benchmark and turn the CSV into one table per
+# construction/regime. Override REPS/BUDGET (e.g. `make tables REPS=5 BUDGET=3`)
+# for a quicker pass; the defaults are the rigorous 100 repetitions per row,
+# capped at 20 seconds of measurement each.
+REPS      ?= 100
+BUDGET    ?= 20
+WARMUP    ?= 5
+STAT      ?= mean
+BENCH_CSV ?= $(BENCH_DIR)/results.csv
+BENCH_TEX ?= $(BENCH_DIR)/tables.tex
+
 # Rules
-.PHONY: all clean
+.PHONY: all clean bench tables
 
 all: $(TARGET)
 
@@ -81,5 +112,22 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(HEADERS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Benchmark: build with `make bench`
+bench: $(BENCH_TARGET)
+
+$(BENCH_TARGET): $(RS_OBJS) $(CRS_OBJS) $(SUBSET_OBJS) $(BENCH_OBJS)
+	$(CC) $^ -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/bench/%.o: $(BENCH_DIR)/%.c $(HEADERS) $(BENCH_DIR)/bench.h
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Full pipeline: benchmark -> CSV -> LaTeX tables (six: two RS, three Subset,
+# one CRS). Override REPS/BUDGET for a quicker pass and STAT to switch the
+# reported statistic, e.g. `make tables REPS=5 BUDGET=3 STAT=median`.
+tables: $(BENCH_TARGET)
+	./$(BENCH_TARGET) --reps $(REPS) --budget $(BUDGET) --warmup $(WARMUP) --csv $(BENCH_CSV)
+	python3 $(BENCH_DIR)/gen_tables.py $(BENCH_CSV) --stat $(STAT) --out $(BENCH_TEX)
+
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(TARGET) $(BENCH_TARGET) test/prog $(BENCH_CSV) $(BENCH_TEX)
