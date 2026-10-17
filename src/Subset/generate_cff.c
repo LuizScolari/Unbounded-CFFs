@@ -89,9 +89,9 @@ void colex_unrank(long long r, int k, int S, int *a)
  * @param k Current column subset size.
  * @return Standard colex rank of column j's k-subset.
  */
-static long long chain_col(long long j,
-                            const int *ck, const int *cs, int clen,
-                            int k)
+long long chain_col(long long j,
+                     const int *ck, const int *cs, int clen,
+                     int k)
 {
     if (clen == 0) return j;   /* no chain: standard colex */
 
@@ -125,7 +125,7 @@ static long long chain_col(long long j,
  * @param t Combination size.
  * @param n Ground-set size.
  */
-static void next_comb_init(int *c, int t, int n)
+void next_comb_init(int *c, int t, int n)
 {
     for (int j = 0; j < t; j++) c[j] = j;   /* L1: c[j] = j (0-indexed) */
     c[t]   = n;
@@ -139,7 +139,7 @@ static void next_comb_init(int *c, int t, int n)
  * @param t Combination size.
  * @return 1 if a successor exists, 0 once all C(n,t) combinations are done.
  */
-static int next_comb(int *c, int t)
+int next_comb(int *c, int t)
 {
     int j = 0;
     while (c[j] + 1 == c[j+1]) {            /* L3: find smallest j with a gap */

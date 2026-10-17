@@ -78,7 +78,7 @@ void cff_free(CFF *cff)
  * @param arg Pointer to a BlockArg describing the block to fill.
  * @return Always NULL.
  */
-static void *generate_block(void *arg)
+void *generate_block(void *arg)
 {
     BlockArg *a = (BlockArg *)arg;
 

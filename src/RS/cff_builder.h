@@ -62,4 +62,26 @@ typedef struct {
 void embed_cff(char construction, char block_size, const char *cff_file, int d, long Fq, long k);
 void rs_generate_cff(char construction, char block_size, int d, long fq, long k);
 
+/* Wall-clock breakdown of one generate_new_cff_blocks call, in seconds.
+   setup: sub-field partition, polynomial partition and (x,y) combinations;
+   index: the inverted evaluation indexes (old + new polynomials);
+   fill : the three generate_single_cff calls that set the bits. */
+typedef struct {
+    double setup;
+    double index;
+    double fill;
+} rs_phase_times;
+
+/* Exposed for the benchmark harness (bench/): generates only the new CFF blocks
+   (old_new, new_old, new_new) of one embedding step, and frees a bit-packed
+   matrix. These are the same functions used internally by embed_cff. The
+   _timed variant additionally reports the per-phase wall-clock split (pass NULL
+   to skip); generate_new_cff_blocks is exactly that call with times == NULL. */
+generated_cffs generate_new_cff_blocks(char construction, char block_size, int d,
+                                       long *Fq_steps, long *k_steps, int num_steps);
+generated_cffs generate_new_cff_blocks_timed(char construction, char block_size, int d,
+                                             long *Fq_steps, long *k_steps, int num_steps,
+                                             rs_phase_times *times);
+void free_matrix(uint64_t **matrix, long rows);
+
 #endif /* CFF_BUILDER_H */

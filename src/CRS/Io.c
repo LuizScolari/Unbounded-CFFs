@@ -18,8 +18,8 @@ typedef struct {
 /**
  * Converts a slice of bit-packed rows into '0'/'1' text (thread body).
  *
- * Each row is written as n characters followed by '\n' into the shared buffer,
- * processing 64 columns per machine word.
+ * Each row is written as n space-separated characters followed by '\n' into
+ * the shared buffer, processing 64 columns per machine word.
  *
  * @param arg Pointer to a TextArg describing the row slice.
  * @return Always NULL.
@@ -29,7 +29,7 @@ static void *rows_to_text(void *arg)
     TextArg *a = (TextArg *)arg;
     const int     n   = a->n;
     const size_t  rw  = a->row_words;
-    const size_t  stride = (size_t)n + 1;   /* n chars + '\n' */
+    const size_t  stride = 2 * (size_t)n;   /* n chars + (n-1) spaces + '\n' */
 
     for (int r = a->r_start; r < a->r_end; r++) {
         const uint64_t *row = a->data + (size_t)r * rw;
@@ -39,19 +39,23 @@ static void *rows_to_text(void *arg)
         int full_words = n >> 6;
         for (int w = 0; w < full_words; w++) {
             uint64_t word = row[w];
-            char *p = out + (w << 6);
-            for (int b = 0; b < 64; b++)
-                p[b] = ((word >> b) & 1) + '0';
+            char *p = out + (w << 7);
+            for (int b = 0; b < 64; b++) {
+                p[2 * b]     = ((word >> b) & 1) + '0';
+                p[2 * b + 1] = ' ';
+            }
         }
         /* Remaining columns */
         int rem = n & 63;
         if (rem) {
             uint64_t word = row[full_words];
-            char *p = out + (full_words << 6);
-            for (int b = 0; b < rem; b++)
-                p[b] = ((word >> b) & 1) + '0';
+            char *p = out + (full_words << 7);
+            for (int b = 0; b < rem; b++) {
+                p[2 * b]     = ((word >> b) & 1) + '0';
+                p[2 * b + 1] = ' ';
+            }
         }
-        out[n] = '\n';
+        out[stride - 1] = '\n';   /* replaces the trailing space */
     }
     return NULL;
 }
@@ -60,7 +64,7 @@ static void *rows_to_text(void *arg)
  * Saves a CFF to a text file.
  *
  * The first line is the header "d n k q1 q2 ... qk"; the following t lines are
- * the matrix rows, each n characters of '0'/'1'. Rows are converted to text in
+ * the matrix rows, each n space-separated '0'/'1' values. Rows are converted to text in
  * parallel chunks and written sequentially.
  *
  * @param cff CFF to save.
@@ -80,7 +84,7 @@ int cff_save(const CFF *cff, const char *filename)
 
     /* Body: convert in chunks, write sequentially */
     int nthreads = 4;
-    size_t stride = (size_t)cff->n + 1;
+    size_t stride = 2 * (size_t)cff->n;
 
     for (int r = 0; r < cff->t; r += SAVE_CHUNK) {
         int chunk = cff->t - r;

@@ -22,6 +22,13 @@ long long binom(int n, int k);
 void      colex_unrank(long long r, int k, int S, int *a);
 long long colex_rank(const int *a, int k);
 
+/* Exposed for the benchmark harness (bench/): the column-remapping and
+   combination-enumeration helpers used by generate_cff's inner loop, so the
+   benchmark can regenerate only the new columns [n_old, n_new). */
+long long chain_col(long long j, const int *ck, const int *cs, int clen, int k);
+void      next_comb_init(int *c, int t, int n);
+int       next_comb(int *c, int t);
+
 CFF *generate_cff(int d, int k, int S,
                   int chain_len, const int *chain_k, const int *chain_S);
 

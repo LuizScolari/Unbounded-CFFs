@@ -13,5 +13,9 @@ typedef struct {
     int       col_end;
 } BlockArg;
 
+/* Fills one prime-power block of the matrix (thread body). Exposed so the
+   benchmark harness (bench/) can time filling only the new columns of a block,
+   reusing the exact same inner loop used by cff_generate. */
+void *generate_block(void *arg);
 
 #endif

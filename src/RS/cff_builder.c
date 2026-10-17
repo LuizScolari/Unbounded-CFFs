@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <glib.h>
 #include <omp.h>
 #include "flint/flint.h"
@@ -235,6 +236,15 @@ void embed_cff(char construction, char block_size, const char *cff_file, int d, 
 }
 
 /**
+ * Monotonic wall-clock time in seconds, used for the optional phase split.
+ */
+static double rs_now_sec(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+}
+
+/**
  * Generates the new CFF blocks needed for one embedding step.
  *
  * Orchestrates the generation of the three blocks that grow a CFF: old_new,
@@ -250,7 +260,20 @@ void embed_cff(char construction, char block_size, const char *cff_file, int d, 
  * @return Structure containing the three generated blocks.
  */
 generated_cffs generate_new_cff_blocks(char construction, char block_size, int d, long* Fq_steps, long* k_steps, int num_steps) {
+    return generate_new_cff_blocks_timed(construction, block_size, d, Fq_steps, k_steps, num_steps, NULL);
+}
+
+/**
+ * Same as generate_new_cff_blocks, additionally reporting the wall-clock split
+ * between setup, inverted-index construction and matrix filling.
+ *
+ * @param times Optional output with the per-phase seconds (NULL to skip).
+ * @return Structure containing the three generated blocks.
+ */
+generated_cffs generate_new_cff_blocks_timed(char construction, char block_size, int d, long* Fq_steps, long* k_steps, int num_steps, rs_phase_times* times) {
     generated_cffs result = {0};
+    if (times) *times = (rs_phase_times){0};
+    double t_phase = rs_now_sec();
 
     long q_final = Fq_steps[num_steps - 1];
     long p, n;
@@ -313,8 +336,13 @@ generated_cffs generate_new_cff_blocks(char construction, char block_size, int d
     subfield_partition all_partition = partitions[num_steps - 1];
     fq_nmod_t* points_for_eval = all_partition.all_elements;
     long num_points = all_partition.count_all;
+
+    if (times) { double now = rs_now_sec(); times->setup = now - t_phase; t_phase = now; }
+
     GHashTable* inverted_index_old = create_inverted_evaluation_index(num_points, poly_part.num_old_polys, points_for_eval, poly_part.old_polys, ctx);
     GHashTable* inverted_index_new = create_inverted_evaluation_index(num_points, poly_part.num_new_polys, points_for_eval, poly_part.new_polys, ctx);
+
+    if (times) { double now = rs_now_sec(); times->index = now - t_phase; t_phase = now; }
 
     if (!global_ctx_initialized) {
         fq_nmod_ctx_init_modulus(global_ctx, fq_nmod_ctx_modulus(ctx), "a");
@@ -329,6 +357,8 @@ generated_cffs generate_new_cff_blocks(char construction, char block_size, int d
 
     result.cff_new = generate_single_cff(&result.rows_new, combos.combos_new, num_new_rows, inverted_index_new, poly_part.num_new_polys);
     result.cols_new = poly_part.num_new_polys;
+
+    if (times) times->fill = rs_now_sec() - t_phase;
 
     g_hash_table_destroy(inverted_index_old);
     g_hash_table_destroy(inverted_index_new);
