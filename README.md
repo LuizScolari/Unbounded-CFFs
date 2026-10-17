@@ -12,8 +12,8 @@ there is a row with a `1` in one of them and `0` in all the others. Equivalently
 the union of any *d* columns never covers another column. The ratio *n/t* (or its
 growth) measures how efficient the family is.
 
-CFFs are used in group testing, cryptography and key distribution, digital
-signatures, and combinatorics.
+CFFs have applications in different areas, such as group testing, digital signatures, 
+batch verification, key distribuition, and others. 
 
 ## Repository layout
 
@@ -24,6 +24,7 @@ src/
   CRS/          Chinese Remainder Sieve construction           
   Subset/       Subset construction            
 test/           CFF verifiers: verify.c (d-CFF property) and verify.py (row/col sums)
+bench/          growth benchmark → ./cff_bench and the LaTeX tables (see bench/README.md)
 Makefile        single build → ./cff
 CFFs/           output matrices (created at runtime, git-ignored)
 ```
@@ -128,7 +129,7 @@ Parameters:
 
 Given *k* prime powers *p₁,…,p_k* with distinct primes (pairwise coprime moduli)
 and *∏ pⱼ ≥ nᵈ*, each prime power contributes a block of *pⱼ* rows; entry
-*((j, y), c)* is `1` iff *c ≡ y (mod pⱼ)*.
+*((j, y), c)* is `1` iff *c ≡ y (mod pⱼ)*, where *0 ≤ y < pⱼ*.
 The result is a *d-CFF(t, n)* with *t = Σ pⱼ*. Embedding adds new prime powers
 and/or a larger *n* while preserving the original matrix. Row blocks are generated
 in parallel with pthreads over a bit-packed matrix.
