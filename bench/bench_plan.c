@@ -6,11 +6,9 @@
  * the first one is generated from scratch and each of the following is an
  * embedding of the one before it -- exactly one block of a benchmark table.
  *
- * Tables
- * ------
- *  rs-embedding      RS polynomial, full q x q rows, d = floor((q-1)/k) (the
- *                    largest strength the full block supports). A step raises
- *                    the degree k, jumps to a larger sub-field q, or both.
+ * Tables:
+ *  rs-embedding      RS polynomial C_{q,k,d}, rows (dk+1)q. Every step squares
+ *                    the field (q -> q^2); d and k never decrease.
  *  rs-monotone       RS monotone: d and k are fixed, only q grows; rows (dk+1)q.
  *  subset-embedding  Subset M(d,k,S): d fixed per chain, k and S both grow with
  *                    no further constraint.
@@ -33,8 +31,6 @@
    header, which defines a CFF type that clashes with the CRS one. */
 extern long long binom(int n, int k);
 
-/* ------------------------------------------------------------ table metadata */
-
 static const struct {
     const char *name;
     const char *construction;
@@ -48,8 +44,6 @@ static const struct {
 const char *bench_table_name(TableId id)         { return TABLE_META[id].name; }
 const char *bench_table_construction(TableId id) { return TABLE_META[id].construction; }
 Kind        bench_table_kind(TableId id)         { return TABLE_META[id].kind; }
-
-/* ------------------------------------------------------------------ helpers */
 
 double bench_matrix_bytes(long long t, long long n)
 {
@@ -87,8 +81,6 @@ static long crs_max_n(const int *q, int k, int d)
     while ((long double)d * logl((long double)(n + 1)) <= logprod + 1e-9L)   n++;
     return n;
 }
-
-/* ------------------------------------------------------------- plan building */
 
 typedef struct { BenchRow *rows; int n, max; } Plan;
 
@@ -218,28 +210,23 @@ static void add_crs_chain(Plan *p, TableId table, int block, int d,
     }
 }
 
-/* ------------------------------------------------------------------- tables */
-
-/* RS embedding: full q x q rows, d = floor((q-1)/k) (the maximum strength the
-   full block supports). Each chain stays inside one characteristic, so every q
-   is a sub-field of the next. */
+/* RS embedding: C_{q,k,d} with (dk+1)q rows. Every step squares the field
+   (q -> q^2), and neither d nor k ever decreases. The library embeds C_{q,k,d}
+   only when its points cover the whole field (dk+1 = q), and the next CFF needs
+   d'k'+1 >= q. So every CFF of a chain except the last has dk+1 = q. */
 static void build_rs_embedding(Plan *p)
 {
-    static const long q1[] = {2, 4, 4, 16, 16, 16}, k1[] = {1, 1, 2, 2, 3, 4};
-    static const long q2[] = {3, 3, 9, 9, 9, 9},    k2[] = {1, 2, 2, 3, 4, 5};
-    static const long q3[] = {5, 5, 25, 25},        k3[] = {1, 2, 2, 3};
-
-    static const struct { const long *q, *k; int m; } chains[] = {
-        { q1, k1, 6 }, { q2, k2, 6 }, { q3, k3, 4 },
+    static const struct { long q[BENCH_MAX_STEPS], k[BENCH_MAX_STEPS];
+                          int d[BENCH_MAX_STEPS]; int m; } chains[] = {
+        { {2, 4, 16, 256}, {1, 1, 1, 1}, {1, 3, 15, 15}, 4 },
+        { {4, 16},         {3, 3},       {1, 5},         2 },
+        { {3, 9, 81},      {1, 2, 2},    {2, 4, 4},      3 },
+        { {5, 25},         {1, 3},       {4, 8},         2 },
     };
 
-    for (int c = 0; c < (int)(sizeof(chains) / sizeof(chains[0])); c++) {
-        int ds[BENCH_MAX_STEPS];
-        for (int i = 0; i < chains[c].m; i++)
-            ds[i] = (int)((chains[c].q[i] - 1) / chains[c].k[i]);
-        add_rs_chain(p, TBL_RS_EMBEDDING, c + 1, 'p', 'f',
-                     chains[c].q, chains[c].k, ds, chains[c].m);
-    }
+    for (int c = 0; c < (int)(sizeof(chains) / sizeof(chains[0])); c++)
+        add_rs_chain(p, TBL_RS_EMBEDDING, c + 1, 'p', 'm',
+                     chains[c].q, chains[c].k, chains[c].d, chains[c].m);
 }
 
 /* RS monotone: d and k fixed, only q grows (rows (dk+1)q, linear in q). */

@@ -13,7 +13,7 @@
  * (chains) whose first row is an initial CFF and whose remaining rows embed the
  * row above:
  *
- *   rs-embedding      RS polynomial, full q x q rows, d = floor((q-1)/k).
+ *   rs-embedding      RS polynomial C_{q,k,d}: q -> q^2, d and k never decrease.
  *   rs-monotone       RS monotone: d, k fixed, only q grows.
  *   subset-embedding  Subset: d fixed, k and S grow.
  *   subset-nested     Subset nested (Sperner): d = 1, k = floor(S/2).
@@ -50,8 +50,6 @@ static BenchRow g_plan[BENCH_MAX_ROWS];
 static Result   g_res[BENCH_MAX_ROWS];
 static int      g_n;
 
-/* ------------------------------------------------------------------ helpers */
-
 static long long parse_bytes(const char *s)
 {
     char *end;
@@ -87,8 +85,6 @@ static void group_ll(char *out, size_t cap, long long v)
     }
     out[o] = '\0';
 }
-
-/* ------------------------------------------------------------- measurement */
 
 /**
  * Runs one plan row: warm-up runs (discarded, to absorb one-time costs such as
@@ -185,17 +181,15 @@ static RunStatus run_row(const BenchRow *r, Result *out, int reps, int warmup,
     return RUN_OK;
 }
 
-/* ------------------------------------------------------------------ output */
-
 static const char *table_title(TableId id)
 {
     switch (id) {
-        case TBL_RS_EMBEDDING:     return "RS embedding -- polynomial, full q x q rows, d = floor((q-1)/k)";
-        case TBL_RS_MONOTONE:      return "RS monotone -- d, k fixed, only q grows (rows (dk+1)q)";
-        case TBL_SUBSET_EMBEDDING: return "Subset embedding -- d fixed, k and S grow";
-        case TBL_SUBSET_NESTED:    return "Subset nested (Sperner) -- d = 1, k = floor(S/2)";
-        case TBL_SUBSET_MONOTONE:  return "Subset monotone -- d, k fixed, S grows";
-        case TBL_CRS_EMBEDDING:    return "CRS embedding -- one prime power added per step, n maximal";
+        case TBL_RS_EMBEDDING:     return "RS embedding: polynomial C_{q,k,d}, q -> q^2, d and k never decrease";
+        case TBL_RS_MONOTONE:      return "RS monotone: d, k fixed, only q grows (rows (dk+1)q)";
+        case TBL_SUBSET_EMBEDDING: return "Subset embedding: d fixed, k and S grow";
+        case TBL_SUBSET_NESTED:    return "Subset nested (Sperner): d = 1, k = floor(S/2)";
+        case TBL_SUBSET_MONOTONE:  return "Subset monotone: d, k fixed, S grows";
+        case TBL_CRS_EMBEDDING:    return "CRS embedding: one prime power added per step, n maximal";
         default:                   return "";
     }
 }
@@ -301,8 +295,6 @@ static void list_plan(void)
     printf("\n%d rows in the plan.\n", g_n);
 }
 
-/* ------------------------------------------------------------------- main */
-
 static void usage(const char *prog)
 {
     printf("Usage: %s [--reps N] [--warmup W] [--budget S] [--only ID] [--csv FILE]\n"
@@ -362,7 +354,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < g_n; i++) {
         if (g_plan[i].table != prev) {
             prev = g_plan[i].table;
-            printf("\n== %s ==\n", bench_table_name(prev));
+            printf("\n%s\n", bench_table_name(prev));
         }
         printf("  run   block %d step %d: %d-CFF(%lld,%lld) ...",
                g_plan[i].block, g_plan[i].step, g_plan[i].d, g_plan[i].t, g_plan[i].n);
@@ -386,9 +378,7 @@ int main(int argc, char **argv)
         }
     }
 
-    printf("\n==================================================================================\n");
-    printf(" GROWTH BENCHMARK -- time to build ONLY the new parts (file I/O excluded)\n");
-    printf("==================================================================================\n");
+    printf("\nTime to build only the new parts (file I/O excluded)\n");
     for (TableId id = 0; id < TBL_COUNT; id++) print_table(id);
 
     if (csv) write_csv(csv);

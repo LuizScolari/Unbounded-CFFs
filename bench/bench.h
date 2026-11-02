@@ -28,12 +28,8 @@
 
 #include <stdint.h>
 
-/* ------------------------------------------------------------------ timing */
-
 /** Monotonic wall-clock time in seconds (CLOCK_MONOTONIC). */
 double now_sec(void);
-
-/* --------------------------------------------------------------- statistics */
 
 typedef struct {
     double mean;
@@ -46,8 +42,6 @@ typedef struct {
 
 /** Summary statistics of an array of timing samples. */
 Stats stats_compute(const double *x, int n);
-
-/* ----------------------------------------------------------- step descriptors */
 
 #define BENCH_MAX_STEPS 32
 
@@ -96,8 +90,6 @@ typedef struct {
     long long n_old;                 /* = C(S_prev, k_prev)                   */
 } SubsetStep;
 
-/* --------------------------------------------------------------- per-step timers */
-
 /**
  * Times one RS step.
  *
@@ -117,8 +109,6 @@ double bench_crs_step(const CRSStep *s);
 
 /** Seconds to generate the new columns, or a negative value on failure. */
 double bench_subset_step(const SubsetStep *s);
-
-/* ------------------------------------------------------------- benchmark plan */
 
 typedef enum { K_RS, K_CRS, K_SUB } Kind;
 

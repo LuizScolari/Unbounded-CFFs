@@ -12,7 +12,7 @@ produce it.
 
 | Table | Construction | Regime |
 |---|---|---|
-| `rs-embedding` | RS (polynomial) | full `q × q` rows, `d = ⌊(q−1)/k⌋`; a step raises `k`, jumps to a larger sub-field `q`, or both |
+| `rs-embedding` | RS (polynomial) | `C_{q,k,d}` with `(dk+1)q` rows; every step squares the field (`q → q²`), `d` and `k` never decrease |
 | `rs-monotone` | RS (monotone) | `d` and `k` fixed, only `q` grows (rows `(dk+1)q`) |
 | `subset-embedding` | Subset | `d` fixed per chain, `k` and `S` both grow |
 | `subset-nested` | Subset | nested (Sperner) family: `d = 1`, `k = ⌊S/2⌋` (maximum columns `C(S,k)`) |
@@ -89,12 +89,12 @@ The chains are plain arrays in the `build_*` functions of
 [`bench_plan.c`](bench_plan.c) — that file is the single place to edit to
 benchmark other families.
 
-- **`rs-embedding`** — three chains, one per characteristic, each staying inside
-  its field tower so every `q` is a sub-field of the next:
-  `(q,k) = (2,1) (4,1) (4,2) (16,2) (16,3) (16,4)`,
-  `(3,1) (3,2) (9,2) (9,3) (9,4) (9,5)` and `(5,1) (5,2) (25,2) (25,3)`.
-  The strength is always `d = ⌊(q−1)/k⌋`, the largest the full `q × q` block
-  supports (which is also the condition under which the library uses it).
+- **`rs-embedding`** — four chains of `C_{q,k,d}` (`(dk+1)q` rows), each step
+  squaring the field: `(q,k,d) = (2,1,1) (4,1,3) (16,1,15) (256,1,15)`,
+  `(4,3,1) (16,3,5)`, `(3,1,2) (9,2,4) (81,2,4)` and `(5,1,4) (25,3,8)`.
+  `d` and `k` never decrease. The library embeds `C_{q,k,d}` only when its
+  points cover the whole field (`dk+1 = q`), and the next CFF needs
+  `d'k'+1 ≥ q`. So every CFF of a chain except the last has `dk+1 = q`.
 - **`rs-monotone`** — `d,k` fixed, `q` grows: `d=1,k=1: 2,4,16,256`;
   `d=2,k=1: 3,9,81`; `d=1,k=2: 3,27`; `d=2,k=2: 5,25`.
 - **`subset-embedding`** — `d=1: (k,S) = (5,10) (8,16) (11,22) (13,26)`;

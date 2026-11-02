@@ -4,7 +4,7 @@ gen_tables.py - Generate the LaTeX growth-benchmark tables from a cff_bench CSV.
 
 One table per construction/regime (six in total):
 
-    rs-embedding      RS polynomial, full q x q rows, d = floor((q-1)/k)
+    rs-embedding      RS polynomial C_{q,k,d}: q -> q^2, d and k never decrease
     rs-monotone       RS monotone: d, k fixed, only q grows
     subset-embedding  Subset: d fixed, k and S grow
     subset-nested     Subset nested (Sperner): d = 1, k = floor(S/2)
@@ -37,8 +37,6 @@ import sys
 MISSING = r'\textemdash'
 
 
-# --------------------------------------------------------------- table specs
-
 # id -> (title, parameter columns, time columns, caption)
 # A parameter column is (CSV field, LaTeX header, alignment).
 PARAM_RS = [('q', '$q$', 'c'), ('k', '$k$', 'c'), ('d', '$d$', 'c'),
@@ -67,8 +65,6 @@ TABLES = [
 ]
 
 
-# --------------------------------------------------------------- formatting
-
 def group(value):
     """'1048576' -> '1{,}048{,}576' (thousands separators, LaTeX-safe)."""
     s = str(value).strip()
@@ -89,8 +85,6 @@ def fmt_time(row, prefix, stat, decimals):
         return MISSING
     return f'{float(value):.{decimals}f}'
 
-
-# ------------------------------------------------------------- table emitter
 
 def emit_table(table_id, params, times, caption, rows, stat, decimals):
     rows = [r for r in rows if r['table'] == table_id]
